@@ -1,8 +1,7 @@
 package com.keven1z.utils;
 
-import dHook.DefaultDHookExtenderCallbacks;
-import dHook.IDHookExtender;
-import dHook.IDHookExtenderCallbacks;
+import com.keven1z.entity.ConfigEntity;
+import com.keven1z.entity.PluginEntity;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.springframework.core.io.Resource;
@@ -10,6 +9,8 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
@@ -60,7 +61,7 @@ public class JarUtil {
         return JarLoader.saveToJar(agent, changeNodes);
     }
 
-    public static byte[] updateConfig(String value) throws IOException {
+    public static byte[] updateConfig(String id,List<ConfigEntity> configEntities) throws IOException {
         ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         Resource[] resources = resolver.getResources("agent/dHook.jar");
         Resource resource = resources[0];
@@ -77,11 +78,14 @@ public class JarUtil {
             JarEntry jarEntry = entries.nextElement();
             String entryName = jarEntry.getName();
             InputStream in = jf.getInputStream(jarEntry);
-            if (entryName.equals("cn/com/x1001/config.properties")) {
+            if (entryName.equals("com/keven1z/config.properties")) {
                 jarEntry = new JarEntry(entryName);
                 jos.putNextEntry(jarEntry);
                 Properties properties = new Properties();
-                properties.setProperty("register_id", value);
+                properties.setProperty("register_id", id);
+                for (ConfigEntity configEntity:configEntities){
+                    properties.setProperty(configEntity.getName(), configEntity.getValue());
+                }
                 properties.load(in);
                 properties.store(jos, null);
             } else {
@@ -149,13 +153,31 @@ public class JarUtil {
         }
         return plugins;
     }
-    public static IDHookExtenderCallbacks loadJar(String path) throws InstantiationException, IllegalAccessException, IOException, ClassNotFoundException {
-        URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{new URL(path)});
-        Class<?> loadClass = urlClassLoader.loadClass("dHook.DHookExtender");
-        IDHookExtender dHookExtender =(IDHookExtender)loadClass.newInstance();
-        IDHookExtenderCallbacks extenderCallbacks = new DefaultDHookExtenderCallbacks();
-        dHookExtender.registerExtenderCallbacks(extenderCallbacks);
-        urlClassLoader.close();
-        return extenderCallbacks;
+
+    public static PluginEntity loadJar(String path) throws InstantiationException, IllegalAccessException, IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
+        URLClassLoader urlClassLoader = null;
+        Object defaultDHookExtenderCallbacks;
+        PluginEntity pluginEntity = new PluginEntity();
+        try {
+            urlClassLoader = new URLClassLoader(new URL[]{new URL(path)});
+            Class<?> defaultDHookExtenderCallbacksClass = urlClassLoader.loadClass("dHook.DefaultDHookExtenderCallbacks");
+            defaultDHookExtenderCallbacks = defaultDHookExtenderCallbacksClass.getDeclaredConstructor(new Class[]{}).newInstance();
+            Class<?> loadClass = urlClassLoader.loadClass("dHook.DHookExtender");
+
+            Method registerExtenderCallbacks = loadClass.getDeclaredMethod("registerExtenderCallbacks", urlClassLoader.loadClass("dHook.IDHookExtenderCallbacks"));
+            Object dHookExtender = loadClass.getDeclaredConstructor(new Class[]{}).newInstance();
+            registerExtenderCallbacks.invoke(dHookExtender, defaultDHookExtenderCallbacks);
+
+            Method getExtensionNameMethod = defaultDHookExtenderCallbacksClass.getMethod("getExtensionName");
+            Method getExtensionDescMethod = defaultDHookExtenderCallbacksClass.getMethod("getExtensionDesc");
+            String extensionName = getExtensionNameMethod.invoke(defaultDHookExtenderCallbacks).toString();
+            String extensionDesc = getExtensionDescMethod.invoke(defaultDHookExtenderCallbacks).toString();
+
+            pluginEntity.setPluginName(extensionName);
+            pluginEntity.setDesc(extensionDesc);
+        } finally {
+            if (urlClassLoader != null) urlClassLoader.close();
+        }
+        return pluginEntity;
     }
 }

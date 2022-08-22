@@ -7,10 +7,11 @@ import java.util.List;
 
 @Mapper
 public interface IPluginDao {
-//    @Select("SELECT * FROM agent WHERE id = #{id}")
-//    @Result(column = "bind_process_name",property = "bindProcessName")
-//    AgentEntity findAgentById(String id);
 
+
+    /**
+     * 查询所有插件信息
+     */
     @Select("select * from plugins")
     @Result(id = true,column = "file_name",property = "fileName")
     @Result(column = "file_path",property = "filePath")
@@ -24,8 +25,8 @@ public interface IPluginDao {
 
 //    @Update({ "update agent set time = #{time},state = #{state},javaVersion=#{javaVersion},os=#{os},bind_process_name=#{bindProcessName} where id = #{id}" })
 //    int update(PluginEntity pluginEntity);
-    @Delete("DELETE FROM plugins WHERE file_name = #{fileName}")
-    int delete(String fileName);
+    @Delete("DELETE FROM plugins WHERE file_name = #{fileName} and agent_id = #{agentId}")
+    int delete(String fileName,String agentId);
 
     @Select("select * FROM plugins WHERE file_name = #{fileName}")
     @Result(id = true,column = "file_name",property = "fileName")

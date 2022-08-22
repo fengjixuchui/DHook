@@ -34,65 +34,16 @@ public class MethodEntity implements Serializable {
      */
     @Expose
     private String desc;
+    /**
+     * 修改的参数
+     */
     @Expose
     private String parameters;
-    private int maId;
+    private int hookId = -1;
     @Expose
     private int sort;
+    @Expose
+    private int type;
 
-    public int getMethodId() {
-        return methodId;
-    }
 
-    public void setMethodId(int methodId) {
-        this.methodId = methodId;
-    }
-
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    public String getMethodName() {
-        return methodName;
-    }
-
-    public void setMethodName(String methodName) {
-        this.methodName = methodName;
-    }
-
-    public String getDesc() {
-        return desc;
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-
-    public int getMaId() {
-        return maId;
-    }
-
-    public void setMaId(int maId) {
-        this.maId = maId;
-    }
-
-    public int getSort() {
-        return sort;
-    }
-
-    public void setSort(int sort) {
-        this.sort = sort;
-    }
-
-    public String getParameters() {
-        return parameters;
-    }
-
-    public void setParameters(String parameters) {
-        this.parameters = parameters;
-    }
 }
